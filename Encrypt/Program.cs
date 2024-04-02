@@ -65,18 +65,22 @@ namespace AesEncryption
                 }
             }
         }
+        public static byte[] GenerateRandomBytes(int numberOfBytes)
+        {
+            byte[] randomBytes = new byte[numberOfBytes];
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            return randomBytes;
+        }
         public static string ReadFileData(string filePath)
         {
-            try
-            {
-                string data = File.ReadAllText(filePath);
-                return data;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error occurred: " + ex.Message);
-                return null;
-            }
+            byte[] fileBytes = File.ReadAllBytes(filePath);
+
+            string base64String = Convert.ToBase64String(fileBytes);
+
+            return base64String;
         }
         public static void SaveToFile(string content, string filePath)
         {
@@ -93,8 +97,7 @@ namespace AesEncryption
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("Please provide a file path.");
-                Console.WriteLine("Encrypt.exe <ShellcodeFilePath> <PathToSaveFiles>");
+                Console.WriteLine($"Insufficient arguments provided.{Environment.NewLine}Usage: Encrypt.exe <ShellcodeFilePath> <PathToSaveFiles>");
                 return;
             }
 
@@ -102,45 +105,67 @@ namespace AesEncryption
             string directoryPath = args[1];
             string payload = ReadFileData(filePath);
 
-            if (payload != null)
+            if (!string.IsNullOrEmpty(payload))
             {
-                Console.WriteLine("Data read.");
+                Console.WriteLine("Data read successfully.");
             }
             else
             {
-                Console.WriteLine("Failed to read the file.");
+                Console.WriteLine("Failed to read the file. Please check the file path and permissions.");
             }
-            // CHANGE KEY IF NEEDED
-            var key = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-            Console.WriteLine("Welcome to the Aes Encryption Test tool");
-            Console.WriteLine("Provide the Aes Key in base64 format :");
+            // Generate a 16-byte random key
+            byte[] key = GenerateRandomBytes(16);
+            Console.WriteLine("Welcome to the AES Encryption Test Tool");
+
+            // Convert the key to a Base64 string for display and use in encryption
             string keyBase64 = Convert.ToBase64String(key);
-            Console.WriteLine("--------------------------------------------------------------");
+            Console.WriteLine("AES Key in Base64 format:");
+            Console.WriteLine(keyBase64);
+
+            // Divider for better readability
+            Console.WriteLine(new string('-', 60));
+
+            // Encrypt the payload using AES encryption
             string cipherText = EncryptDataWithAes(payload, keyBase64, out string vectorBase64);
 
-            Console.WriteLine("--------------------------------------------------------------");
-            Console.WriteLine("Payload:");
+            // Display the encrypted payload
+            Console.WriteLine("Encrypted Payload:");
             Console.WriteLine(cipherText);
+
+            // Save the encrypted payload to a file
             string cipherTextPath = Path.Combine(directoryPath, "cipherText.txt");
             SaveToFile(cipherText, cipherTextPath);
 
-            Console.WriteLine("--------------------------------------------------------------");
-            Console.WriteLine("Here is the Aes IV in Base64:");
+            // Divider for better readability
+            Console.WriteLine(new string('-', 60));
+
+            // Display the AES initialization vector (IV) in Base64 format
+            Console.WriteLine("AES IV in Base64:");
             Console.WriteLine(vectorBase64);
+
+            // Save the IV to a file
             string vectorBase64Path = Path.Combine(directoryPath, "vectorBase64.txt");
             SaveToFile(vectorBase64, vectorBase64Path);
 
-            Console.WriteLine("--------------------------------------------------------------");
-            Console.WriteLine("Here is the Aes key in Base64:");
+            // Divider for better readability
+            Console.WriteLine(new string('-', 60));
+
+            // Re-display the AES key in Base64 format for confirmation
+            Console.WriteLine("AES Key in Base64 (repeated for convenience):");
             Console.WriteLine(keyBase64);
+
+            // Save the key to a file
             string keyBase64Path = Path.Combine(directoryPath, "keyBase64.txt");
             SaveToFile(keyBase64, keyBase64Path);
 
-            Console.WriteLine("--------------------------------------------------------------");
-            Console.WriteLine("Files saved successfully:");
+            // Divider for better readability
+            Console.WriteLine(new string('-', 60));
+
+            // Confirm the successful saving of all files
+            Console.WriteLine("All files saved successfully:");
             Console.WriteLine($"- Cipher Text: {cipherTextPath}");
-            Console.WriteLine($"- Vector Base64: {vectorBase64Path}");
-            Console.WriteLine($"- Key Base64: {keyBase64Path}");
+            Console.WriteLine($"- AES IV Base64: {vectorBase64Path}");
+            Console.WriteLine($"- AES Key Base64: {keyBase64Path}");
         }
     }
 }
